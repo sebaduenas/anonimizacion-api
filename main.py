@@ -50,19 +50,36 @@ app.add_middleware(
 )
 
 # ============================================
-# CARGAR DATOS AL INICIAR
+# CARGAR DATOS AL INICIAR (OPTIMIZADO PARA MEMORIA)
 # ============================================
 
 DATA_PATH = os.getenv("DATA_PATH", "data/censo_reducido.parquet")
 df: pd.DataFrame = None
 
+# Solo las columnas que necesitamos
+COLUMNAS_NECESARIAS = [
+    'region', 'comuna', 'sexo', 'edad_quinquenal',
+    'p23_est_civil', 'cine11', 'sit_fuerza_trabajo',
+    'cod_ciuo', 'p44_lug_trab', 'p45_medio_transporte'
+]
+
 
 @app.on_event("startup")
 async def load_data():
-    """Carga el parquet en memoria al iniciar la API"""
+    """Carga el parquet en memoria al iniciar la API (optimizado)"""
     global df
     try:
-        df = pd.read_parquet(DATA_PATH)
+        # Cargar solo columnas necesarias
+        df = pd.read_parquet(DATA_PATH, columns=COLUMNAS_NECESARIAS)
+        
+        # Convertir a tipos más eficientes en memoria
+        for col in df.columns:
+            # Convertir a int16 (suficiente para nuestros valores)
+            if df[col].dtype in ['int64', 'Int64']:
+                df[col] = df[col].fillna(-1).astype('int16')
+            elif df[col].dtype == 'float64':
+                df[col] = df[col].fillna(-1).astype('int16')
+        
         print(f"✓ Datos cargados: {len(df):,} registros")
         print(f"✓ Columnas: {list(df.columns)}")
         print(f"✓ Memoria usada: {df.memory_usage(deep=True).sum() / 1024**2:.1f} MB")
