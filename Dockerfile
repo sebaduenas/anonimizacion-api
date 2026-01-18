@@ -10,7 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cache buster - cambiar para forzar rebuild
-ARG CACHEBUST=3
+ARG CACHEBUST=4
 
 # Copiar código
 COPY . .

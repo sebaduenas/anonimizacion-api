@@ -12,7 +12,13 @@ from pydantic import BaseModel
 from typing import Optional
 import pandas as pd
 import os
+import sys
 from comunas import COMUNAS, get_comuna_name
+
+# Logging inmediato para debugging
+print(f"🚀 Iniciando servidor...", flush=True)
+print(f"📍 Python: {sys.version}", flush=True)
+print(f"📍 Puerto: {os.getenv('PORT', '8000')}", flush=True)
 
 # ============================================
 # CONFIGURACIÓN
@@ -26,14 +32,26 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+print("✓ FastAPI app creada", flush=True)
+
 # ============================================
-# HEALTH CHECK (no depende de datos)
+# HEALTH CHECK (responde INMEDIATAMENTE, sin esperar datos)
 # ============================================
 
 @app.get("/health")
 async def health_check():
-    """Endpoint de health check para Railway/Docker"""
-    return {"status": "healthy", "service": "anonimizacion-api"}
+    """Endpoint de health check para Railway - responde sin esperar datos"""
+    global df
+    return {
+        "status": "healthy", 
+        "service": "anonimizacion-api",
+        "data_loaded": df is not None and len(df) > 0 if df is not None else False
+    }
+
+@app.get("/")
+async def root():
+    """Endpoint raíz"""
+    return {"message": "API de Anonimización funcionando", "docs": "/docs"}
 
 # CORS - permitir requests desde tu frontend
 app.add_middleware(
@@ -68,9 +86,24 @@ COLUMNAS_NECESARIAS = [
 async def load_data():
     """Carga el parquet en memoria al iniciar la API (optimizado)"""
     global df
+    print(f"📂 Intentando cargar datos desde: {DATA_PATH}", flush=True)
+    
+    # Verificar que el archivo existe
+    if not os.path.exists(DATA_PATH):
+        print(f"✗ ARCHIVO NO ENCONTRADO: {DATA_PATH}", flush=True)
+        print(f"📍 Directorio actual: {os.getcwd()}", flush=True)
+        print(f"📍 Contenido de data/: {os.listdir('data') if os.path.exists('data') else 'NO EXISTE'}", flush=True)
+        df = pd.DataFrame()
+        return
+    
+    file_size = os.path.getsize(DATA_PATH) / (1024 * 1024)
+    print(f"📂 Archivo encontrado: {file_size:.1f} MB", flush=True)
+    
     try:
         # Cargar solo columnas necesarias
+        print(f"📊 Cargando columnas: {COLUMNAS_NECESARIAS}", flush=True)
         df = pd.read_parquet(DATA_PATH, columns=COLUMNAS_NECESARIAS)
+        print(f"✓ Parquet leído: {len(df):,} registros", flush=True)
         
         # Convertir a tipos más eficientes en memoria
         for col in df.columns:
@@ -80,11 +113,14 @@ async def load_data():
             elif df[col].dtype == 'float64':
                 df[col] = df[col].fillna(-1).astype('int16')
         
-        print(f"✓ Datos cargados: {len(df):,} registros")
-        print(f"✓ Columnas: {list(df.columns)}")
-        print(f"✓ Memoria usada: {df.memory_usage(deep=True).sum() / 1024**2:.1f} MB")
+        print(f"✓ Datos optimizados: {len(df):,} registros", flush=True)
+        print(f"✓ Columnas: {list(df.columns)}", flush=True)
+        print(f"✓ Memoria usada: {df.memory_usage(deep=True).sum() / 1024**2:.1f} MB", flush=True)
+        print(f"🎉 API lista para recibir requests!", flush=True)
     except Exception as e:
-        print(f"✗ Error cargando datos: {e}")
+        print(f"✗ Error cargando datos: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         df = pd.DataFrame()
 
 
