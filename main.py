@@ -26,6 +26,15 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# ============================================
+# HEALTH CHECK (no depende de datos)
+# ============================================
+
+@app.get("/health")
+async def health_check():
+    """Endpoint de health check para Railway/Docker"""
+    return {"status": "healthy", "service": "anonimizacion-api"}
+
 # CORS - permitir requests desde tu frontend
 app.add_middleware(
     CORSMiddleware,
