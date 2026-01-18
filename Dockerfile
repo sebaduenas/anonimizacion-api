@@ -9,7 +9,10 @@ RUN apt-get update && apt-get install -y git git-lfs curl && rm -rf /var/lib/apt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar código (sin el archivo LFS)
+# Cache buster - cambiar para forzar rebuild
+ARG CACHEBUST=3
+
+# Copiar código
 COPY . .
 
 # Descargar el archivo parquet desde GitHub LFS
@@ -30,8 +33,8 @@ RUN ls -la data/ && \
     else echo "ERROR: Archivo parquet no encontrado"; exit 1; \
     fi
 
-# Exponer puerto
-EXPOSE 8000
+# Exponer puerto (Railway usa variable PORT)
+EXPOSE ${PORT:-8000}
 
-# Comando de inicio
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando de inicio - usa $PORT de Railway o 8000 por defecto
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
