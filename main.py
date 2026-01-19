@@ -234,14 +234,14 @@ SIT_LABORAL_LABELS = {
 COD_CIUO_LABELS = {
     0: "Fuerzas armadas",
     1: "Directivos y gerentes",
-    2: "Profesionales (médicos, abogados, ingenieros, etc.)",
-    3: "Técnicos (enfermeros, contadores, programadores, etc.)",
+    2: "Profesionales universitarios",
+    3: "Técnicos y profesionales medios",
     4: "Administrativos y secretarios",
-    5: "Servicios y comercio (vendedores, meseros, peluqueros)",
+    5: "Servicios y comercio",
     6: "Agricultura, ganadería y pesca",
-    7: "Construcción y manufactura (albañiles, mecánicos)",
+    7: "Construcción y manufactura",
     8: "Conductores y operadores de maquinaria",
-    9: "Trabajos no calificados (aseo, carga, mensajería)",
+    9: "Trabajos no calificados",
     999: "No codificable"
 }
 
